@@ -1,0 +1,141 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.project.traplaner.mapper.TravelBoardMapper">
+
+    <sql id="search">
+        <if test="type == 'title'">
+            AND t.title LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="type == 'content'">
+            AND tb.content LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="type == 'writer'">
+            AND m.nick_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="type == 'tc'">
+            AND (t.title LIKE CONCAT('%', #{keyword}, '%') OR tb.content LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+    </sql>
+
+    <!-- 목록: 제목, 작성자, 작성일 -->
+    <select id="findAll" resultType="com.project.traplaner.travelBoard.dto.TravelBoardListResponseDTO">
+        SELECT
+        t.id AS travelId,
+        tb.id AS boardId,
+        t.travel_img AS img,
+        t.title AS short_title,
+        m.nick_name AS writer,
+        tb.write_date,
+        COUNT(f.member_id) AS likeCount
+        FROM tbl_member AS m
+        JOIN tbl_travel AS t ON m.id = t.member_id
+        JOIN tbl_travel_board AS tb ON t.id = tb.travel_id
+        LEFT JOIN tbl_favorite AS f ON tb.id = f.travel_board_id
+        WHERE t.share = 1  <!-- t.share 조건 추가 -->
+        <include refid="search"/>
+        GROUP BY tb.id, m.nick_name, t.id, t.title, tb.write_date, tb.content
+        <choose>
+            <when test="sortType == 'new'">
+                ORDER BY tb.write_date DESC
+            </when>
+            <when test="sortType == 'old'">
+                ORDER BY tb.write_date ASC
+            </when>
+            <when test="sortType == 'best'">
+                ORDER BY likeCount DESC
+            </when>
+        </choose>
+        LIMIT #{pageStart}, #{amount}
+    </select>
+
+    <!-- 게시물 상세조회: 여행id, 여행제목, 작성자, 게시물작성일, 사진, 내용, 좋아요수 -->
+    <select id="findOne" resultType="com.project.traplaner.travelBoard.dto.TravelBoardDetailResponseDTO">
+        SELECT
+        t.id AS travelId,
+        tb.id AS boardId,
+        t.title AS title,
+        m.nick_name AS writer,
+        tb.write_date,
+        t.travel_img AS img,
+        tb.content,
+        COUNT(f.member_id) AS likeCount
+        FROM tbl_travel t
+        JOIN tbl_member m ON t.member_id = m.id
+        LEFT JOIN tbl_travel_board tb ON t.id = tb.travel_id
+        LEFT JOIN tbl_favorite f ON tb.id = f.travel_board_id
+        WHERE tb.id = #{id}
+        GROUP BY t.id, m.nick_name, t.title, t.travel_img, tb.id, tb.write_date, tb.content
+    </select>
+
+    <select id="journeys" resultType="com.project.traplaner.travelBoard.dto.JourneyResponseDTO">
+        SELECT
+        j.journey_name AS journeyName,
+        j.accommodation_name AS placeName,
+        j.start_time AS journeyStartTime,
+        j.google_map_location_pin_information AS locationPin,
+        j.journey_img AS journeyImg
+        FROM tbl_travel t
+        LEFT JOIN tbl_journey j
+        ON t.id = j.travel_id
+        WHERE t.id = #{id}
+        GROUP BY j.journey_name, j.accommodation_name, j.start_time, j.google_map_location_pin_information, j.journey_img
+        ORDER BY journeyStartTime DESC
+    </select>
+
+    <!-- 검색 게시물 개수 -->
+    <select id="getTotalCount" resultType="int">
+        SELECT COUNT(*)
+        FROM tbl_member AS m
+        JOIN tbl_travel AS t ON m.id = t.member_id
+        JOIN tbl_travel_board AS tb ON t.id = tb.travel_id
+        <include refid="search"/>
+    </select>
+
+    <!-- 좋아요 상태 확인 -->
+    <select id="isLikedByMember" parameterType="map" resultType="boolean">
+        SELECT EXISTS(
+        SELECT 1 FROM tbl_favorite
+        WHERE travel_board_id = #{travelBoardId}
+        AND member_id = #{memberId}
+        )
+    </select>
+
+    <!-- 좋아요 추가 -->
+    <insert id="addLike" parameterType="map">
+        INSERT INTO tbl_favorite (travel_board_id, member_id)
+        VALUES (#{travelBoardId}, #{memberId})
+    </insert>
+
+    <!-- 좋아요 제거 -->
+    <delete id="removeLike">
+        DELETE FROM tbl_favorite
+        WHERE travel_board_id = #{travelBoardId}
+        AND member_id = #{memberId}
+    </delete>
+
+    <!-- 좋아요 개수 조회 -->
+    <select id="getLikeCount" resultType="int">
+        SELECT COUNT(member_id)
+        FROM tbl_favorite
+        WHERE travel_board_id = #{travelBoardId}
+    </select>
+
+    <!-- 10/28 by jhjeong -->
+    <insert id="save">
+        INSERT INTO
+            tbl_travel_board(
+                travel_id,
+                member_nick_name,
+                write_date,
+                content
+            )
+        VALUES(
+            #{travelId},
+            #{memberNickName},
+            #{writeDate},
+            #{content}
+        )
+    </insert>
+</mapper>

@@ -1,0 +1,36 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.project.traplaner.mapper.FavoriteMapper">
+
+
+    <select id="favorite_List" resultType="com.project.traplaner.mypage.dto.response.FavoriteListResponseDTO">
+
+        select favorite.*, board.member_nick_name, board.write_date, travel.title from tbl_favorite favorite
+        join tbl_travel_board board on favorite.travel_board_id = board.id
+        join tbl_travel travel on board.travel_id = travel.id
+        where favorite.member_id = #{memberId}  LIMIT #{page.pageStart}, #{page.amount}
+
+    </select>
+
+    <!-- 10/28 by jhjeong -->
+    <insert id="save">
+        INSERT INTO
+            tbl_favorite(
+                member_id,
+                travel_board_id
+            )
+        VALUES(
+            #{memberId},
+            #{travelBoardId}
+        )
+    </insert>
+
+    <select id="getTotal">
+        select count(*) from tbl_favorite where member_id = #{memberId}
+    </select>
+
+
+</mapper>

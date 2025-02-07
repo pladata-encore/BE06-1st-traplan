@@ -1,0 +1,116 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.project.traplaner.mapper.TravelMapper">
+
+    <insert id="saveTravel">
+        INSERT INTO tbl_travel (member_id,title, start_date, end_date)
+        VALUES (#{memberId}, #{title}, #{startDate}, #{endDate})
+    </insert>
+    <insert id="postJourney" parameterType="com.project.traplaner.entity.Journey">
+        INSERT INTO tbl_journey (
+        travel_id, accommodation_name, journey_name,
+        accommodation_road_address_name, start_time, end_time,
+        google_map_location_pin_information, reservation_confirm_image_path, budget
+        )
+        VALUES (
+        #{travelId}, #{accommodationName}, #{journeyName},
+        #{accommodationRoadAddressName}, #{startTime}, #{endTime},
+        #{googleMapLocationPinInformation}, #{reservationConfirmImagePath}, #{budget})
+    </insert>
+    <insert id="save">
+        INSERT INTO
+            tbl_travel(
+                member_id,
+                title,
+                is_domestic,
+                start_date,
+                end_date,
+                updated_at,
+                share,
+                travel_img
+            )
+        VALUES(
+            #{memberId},
+            #{title},
+            #{isDomestic},
+            #{startDate},
+            #{endDate},
+            #{updatedAt},
+            #{share},
+            #{travelImg}
+        )
+    </insert>
+
+    <select id="getNextTravelId" resultType="int">
+        SELECT id
+        FROM tbl_travel
+        ORDER BY id DESC
+        LIMIT 1;
+    </select>
+    <!--
+    #
+    # 멤버 이메일로 travel 뽑아오기
+    #
+    -->
+    <select id="findByEmail" resultType="com.project.traplaner.main.dto.MainTravelDto">
+        SELECT t.*
+        FROM tbl_travel t
+        JOIN tbl_member tm ON t.member_id = tm.id
+        WHERE tm.email=#{email}
+    </select>
+
+    <!--
+    #
+    # Favorite 테이블에서 좋아요 많이 받은 순서로 travel 정보 가져오기
+    # like_count 필드 출력 추가
+    # 필요한 필드만 뽑기
+    #
+    -->
+    <select id="findTopThree" resultType="com.project.traplaner.main.dto.TopThreeFavoriteTravelDto">
+         SELECT
+            t.id, t.member_id, tb.member_nick_name, t.title, t.travel_img, fav.like_count, tb.content
+        FROM
+            tbl_travel t
+        JOIN
+            tbl_travel_board tb ON t.id = tb.travel_id
+        JOIN (
+            SELECT
+                travel_board_id,
+                COUNT(*) AS like_count
+            FROM
+                tbl_favorite
+            GROUP BY
+                travel_board_id
+        ) AS fav ON tb.id = fav.travel_board_id
+        ORDER BY
+            fav.like_count DESC LIMIT 4;
+    </select>
+    <!-- SELECT의 경우에는 반환되는 타입을 작성해 주어야 합니다.
+   resultType을 통해 리턴되는 객체의 타입을 얘기해 줍니다.
+   데이터베이스의 컬럼명과 엔터티의 필드명이 동일해야 합니다. (스네이크케이스 -> 카멜케이스 변환은 따로 설정을 통해 처리)
+   ex) board_no : boardNo (o)  board_num : bnum (x)
+   -->
+    <!--
+    <select id="findAll" resultType="com.study.springstudy.springmvc.chap04.dto.response.BoardDetailResponseDTO">
+        SELECT
+        B.board_no,
+        B.title,
+        B.content,
+        B.writer,
+        B.reg_date,
+        B.view_count,
+        COUNT(R.reply_no) AS reply_count
+        FROM tbl_board B
+        LEFT JOIN tbl_reply R
+        ON B.board_no = R.board_no
+        <include refid="search" />
+        GROUP BY B.board_no
+        ORDER BY board_no DESC
+        LIMIT #{pageStart}, #{amount}
+
+
+
+    -->
+</mapper>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    <settings>
+        <!-- 카멜케이스와 스네이크 케이스 자동 변환 설정 -->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+
+        <!-- 조회던 결과가 없을 시에 null을 리턴해주는 설정 -->
+        <setting name="jdbcTypeForNull" value="NULL"/>
+    </settings>
+    <typeAliases>
+        <!-- 엔터티 클래스 별칭 붙이기 -->
+        <typeAlias type="com.project.traplaner.entity.Member" alias="member"/>
+        <typeAlias type="com.project.traplaner.entity.Journey" alias="journey"/>
+        <typeAlias type="com.project.traplaner.travelplan.dto.TableStatusDto" alias="status"/>
+        <typeAlias type="com.project.traplaner.entity.TravelBoard" alias="travelboard" />
+        <!-- 10/28 by jhjeong -->
+        <typeAlias type="com.project.traplaner.entity.Travel" alias="travel" />
+    </typeAliases>
+
+    <mappers>
+        <mapper resource="mapper/MemberMapper.xml"/>
+        <mapper resource="mapper/TravelBoardMapper.xml" />
+        <mapper resource="mapper/mypageMapper.xml"/>
+        <mapper resource="mapper/FavoriteMapper.xml"/>
+        <!-- 10/28 by jhjeong -->
+        <mapper resource="mapper/TravelMapper.xml"/>
+    </mappers>
+
+</configuration>
